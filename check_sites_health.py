@@ -14,21 +14,20 @@ def parse_arguments():
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-filepath",
+        '-filepath',
         type=str,
         required=True,
-        help="Please, provide a file path"
+        help='Please, provide a file path'
     )
     return parser
 
 
 def load_url_list_from_file(filepath):
     with open(filepath) as file:
-        text_to_process = file.read().splitlines()
-        return text_to_process
+        return file.read().splitlines()
 
 
-def is_server_respond_with_200(url):
+def is_server_respond_with_ok(url):
     try:
         response = requests.get(url)
         return response.ok
@@ -44,7 +43,10 @@ def get_domain_name_from_url(url):
 def get_domain_expiration_date(domain_name):
     try:
         response = whois.whois(domain_name)
-        return response['expiration_date'][0]
+        if isinstance(response['expiration_date'], list):
+            return response['expiration_date'][0]
+        else:
+            return response['expiration_date']
     except (AttributeError, IndexError):
         return None
 
@@ -54,13 +56,15 @@ def check_domain_expiration_date(domain_expiration_date, timedelta_limit):
 
 
 def process_url(url):
-    is_response_ok = is_server_respond_with_200(url)
+    is_response_ok = is_server_respond_with_ok(url)
     domain_name = get_domain_name_from_url(url)
     domain_expiration_date = get_domain_expiration_date(domain_name)
-    is_domain_paid = check_domain_expiration_date(
-        domain_expiration_date,
-        timedelta(days=30)
-    )
+    is_domain_paid = None
+    if domain_expiration_date is not None:
+        is_domain_paid = check_domain_expiration_date(
+            domain_expiration_date,
+            timedelta(days=30)
+        )
 
     return is_response_ok, domain_name, is_domain_paid
 
@@ -69,7 +73,8 @@ def print_url_info(url, domain_name, is_response_200, is_domain_paid):
     print('URL: {}'.format(url))
     print('With domain name : {}'.format(domain_name))
     print('Respond with status 200 - {}'.format(is_response_200))
-    print('Is domain paid? - {}'.format(is_domain_paid))
+    if is_domain_paid is not None:
+        print('Is domain paid? - {}'.format(is_domain_paid))
 
 
 if __name__ == '__main__':
@@ -79,10 +84,9 @@ if __name__ == '__main__':
     try:
         url_list = load_url_list_from_file(args.filepath)
     except FileNotFoundError:
-        sys.exit("Error has occurred while reading file")
+        sys.exit('Error has occurred while reading file')
 
     for url in url_list:
-
         is_response_ok, domain_name, is_domain_paid = process_url(url)
 
         print_url_info(
