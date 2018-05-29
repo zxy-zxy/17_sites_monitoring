@@ -7,6 +7,11 @@ import requests
 import validators
 
 
+def parse_arguments():
+    args_parser = create_parser()
+    return args_parser.parse_args()
+
+
 def create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -25,11 +30,10 @@ def load_url_list_from_file(filepath):
 
 
 def validate_url_list(url_list):
-    return [
-        {
-            'url': url,
-            'is_valid': True if validators.url(url) else False
-        } for url in url_list]
+    return [{
+        'url': url,
+        'is_valid': True if validators.url(url) else False
+    } for url in url_list]
 
 
 def is_server_respond_with_200(url):
@@ -58,10 +62,10 @@ def check_domain_expiration_date(domain_expiration_date, timedelta_limit):
 
 
 def process_url(url):
-    is_response_200 = is_server_respond_with_200(url_dict['url'])
+    is_response_OK = is_server_respond_with_200(url_dict['url'])
     domain_name = get_domain_name_from_url(url_dict['url'])
     domain_expiration_date = get_domain_expiration_date(domain_name)
-    return is_response_200, domain_name, domain_expiration_date
+    return is_response_OK, domain_name, domain_expiration_date
 
 
 def print_url_info(url, domain_name, is_response_200, is_domain_paid):
@@ -76,23 +80,22 @@ def print_url_info(url, domain_name, is_response_200, is_domain_paid):
 
 if __name__ == '__main__':
 
-    args_parser = create_parser()
-    args = args_parser.parse_args()
+    args = parse_arguments()
 
     try:
         url_list = load_url_list_from_file(args.filepath)
     except FileNotFoundError:
         sys.exit("Error has occurred while reading file")
 
-    validated_url_list = validate_url_list(url_list)
+    url_list = validate_url_list(url_list)
 
-    for url_dict in validated_url_list:
+    for url_dict in url_list:
 
         if not url_dict['is_valid']:
             print('Cannot process url: {}'.format(url_dict['url']))
             continue
 
-        is_response_200, domain_name, domain_expiration_date = process_url(url_dict['url'])
+        is_response_OK, domain_name, domain_expiration_date = process_url(url_dict['url'])
 
         is_domain_paid = None
         if domain_expiration_date is not None:
@@ -102,8 +105,5 @@ if __name__ == '__main__':
             )
 
         print_url_info(
-            url_dict['url'],
-            domain_name,
-            is_response_200,
-            is_domain_paid
+            url_dict['url'], domain_name, is_response_OK, is_domain_paid
         )
