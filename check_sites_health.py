@@ -35,7 +35,7 @@ def validate_url_list(url_list):
 def is_server_respond_with_200(url):
     try:
         response = requests.get(url)
-        return response.status_code == 200
+        return response.ok
     except requests.RequestException:
         return False
 
@@ -55,6 +55,13 @@ def get_domain_expiration_date(domain_name):
 
 def check_domain_expiration_date(domain_expiration_date, timedelta_limit):
     return datetime.now() + timedelta_limit < domain_expiration_date
+
+
+def process_url(url):
+    is_response_200 = is_server_respond_with_200(url_dict['url'])
+    domain_name = get_domain_name_from_url(url_dict['url'])
+    domain_expiration_date = get_domain_expiration_date(domain_name)
+    return is_response_200, domain_name, domain_expiration_date
 
 
 def print_url_info(url, domain_name, is_response_200, is_domain_paid):
@@ -85,9 +92,7 @@ if __name__ == '__main__':
             print('Cannot process url: {}'.format(url_dict['url']))
             continue
 
-        is_response_200 = is_server_respond_with_200(url_dict['url'])
-        domain_name = get_domain_name_from_url(url_dict['url'])
-        domain_expiration_date = get_domain_expiration_date(domain_name)
+        is_response_200, domain_name, domain_expiration_date = process_url(url_dict['url'])
 
         is_domain_paid = None
         if domain_expiration_date is not None:
