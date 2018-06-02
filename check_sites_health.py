@@ -41,31 +41,25 @@ def get_domain_name_from_url(url):
 
 
 def get_domain_expiration_date(domain_name):
-    try:
-        response = whois.whois(domain_name)
-        if isinstance(response['expiration_date'], list):
-            return response['expiration_date'][0]
-        else:
-            return response['expiration_date']
-    except (AttributeError, IndexError):
-        return None
+    response = whois.whois(domain_name)
+    if isinstance(response['expiration_date'], list):
+        return response['expiration_date'][0]
+    else:
+        return response['expiration_date']
 
 
 def check_domain_expiration_date(domain_expiration_date, timedelta_limit):
     return datetime.now() + timedelta_limit < domain_expiration_date
 
 
-def process_url(url):
+def process_url(url, expiration_date_duration):
     is_response_ok = is_server_respond_with_ok(url)
     domain_name = get_domain_name_from_url(url)
     domain_expiration_date = get_domain_expiration_date(domain_name)
-    is_domain_paid = None
-    if domain_expiration_date is not None:
-        is_domain_paid = check_domain_expiration_date(
-            domain_expiration_date,
-            timedelta(days=30)
-        )
-
+    is_domain_paid = check_domain_expiration_date(
+        domain_expiration_date,
+        expiration_date_duration
+    )
     return is_response_ok, domain_name, is_domain_paid
 
 
@@ -79,6 +73,8 @@ def print_url_info(url, domain_name, is_response_200, is_domain_paid):
 
 if __name__ == '__main__':
 
+    expiration_date_duration = timedelta(days=30)
+
     args = parse_arguments()
 
     try:
@@ -87,7 +83,10 @@ if __name__ == '__main__':
         sys.exit('Error has occurred while reading file')
 
     for url in url_list:
-        is_response_ok, domain_name, is_domain_paid = process_url(url)
+        is_response_ok, domain_name, is_domain_paid = process_url(
+            url,
+            expiration_date_duration
+        )
 
         print_url_info(
             url, domain_name, is_response_ok, is_domain_paid
