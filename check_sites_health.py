@@ -56,10 +56,12 @@ def process_url(url, expiration_date_duration):
     is_response_ok = is_server_respond_with_ok(url)
     domain_name = get_domain_name_from_url(url)
     domain_expiration_date = get_domain_expiration_date(domain_name)
-    is_domain_paid = check_domain_expiration_date(
-        domain_expiration_date,
-        expiration_date_duration
-    )
+    is_domain_paid = None
+    if domain_expiration_date:
+        is_domain_paid = check_domain_expiration_date(
+            domain_expiration_date,
+            expiration_date_duration
+        )
     return is_response_ok, domain_name, is_domain_paid
 
 
@@ -67,7 +69,9 @@ def print_url_info(url, domain_name, is_response_200, is_domain_paid):
     print('URL: {}'.format(url))
     print('With domain name : {}'.format(domain_name))
     print('Respond with status 200 - {}'.format(is_response_200))
-    if is_domain_paid is not None:
+    if is_domain_paid is None:
+        print('No information about current payment status.')
+    else:
         print('Is domain paid? - {}'.format(is_domain_paid))
 
 
